@@ -24,4 +24,4 @@ There are only two steps.  They are outlined below.
 
 **(2)** - Cron the script.
 
-00 18 * * 1-5 python /home/development/Documents/Software/SHTF/shtf.py -daily
+00 18 * * 1-5 python /path/to/SHTF/shtf.py -daily
