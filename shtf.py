@@ -14,6 +14,7 @@ import logging
 import datetime
 import csv
 import urllib
+import requests
 from bs4 import BeautifulSoup
 import urllib2
 import MySQLdb
@@ -236,7 +237,8 @@ def collect_today_most_volatile(url):
 
 	# Begin Scraping from the url provided
 	try:
-				r = urllib2.urlopen(url)
+		#r = urllib2.urlopen(url)
+		r = requests.get(url)
 
 	# If scraping failed log error and return False
 	except urllib2.URLError as e:
@@ -251,8 +253,9 @@ def collect_today_most_volatile(url):
 
 	# If the error code from the return is OK
 	try:
-		if r.code in (200, 401):
 
+		#if r.code in (200, 401):
+		if r.status_code in (200, 401):
 			# Log the successful page download
 			logger.error('Page download from url successful: ' + url)
 
@@ -260,7 +263,8 @@ def collect_today_most_volatile(url):
 			today_metric_array = []
 
 			# Get the table data from the page
-			data = urllib.urlopen(url).read()
+			#data = urllib.urlopen(url).read()
+			data = r.content
 			# Send to beautiful soup
 			soup = BeautifulSoup(data, "html.parser")
 			i=1
@@ -308,6 +312,7 @@ def collect_today_most_volatile(url):
 			# Log error with return code
 			logger.error('The website returned a error code.')
 			return False
+
 
 		# Run array through sanitizer to split up metrics that include more than one ticker
 		today_metric_array = sanitize_today_metric_array(today_metric_array)
@@ -383,12 +388,14 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 
 			# Download the page with fundamental data
 			try:
-				r = urllib2.urlopen(url)
+				#r = urllib2.urlopen(url)
+				r = requests.get(url)
 			except urllib2.URLError as e:
 				r = e
 
 			# Check the return code of the page to check OK
-			if r.code in (200, 401):
+			#if r.code in (200, 401):
+			if r.status_code in (200, 401):
 				# Get the table data from the page
    				data = urllib.urlopen(url).read()
 				# Pass to BeautifulSoup html parser
@@ -728,8 +735,8 @@ if __name__ == '__main__':
 	day2Output = app_base_filepath + "/data/day2.txt"
 	data_file = app_base_filepath + "/data"
 	log_file = app_base_filepath + "/shtf.log"
-	finviz_url = "http://www.finviz.com"
-	finviz_fundamental_url = "http://finviz.com/quote.ashx?t="
+	finviz_url = "https://www.finviz.com"
+	finviz_fundamental_url = "https://finviz.com/quote.ashx?t="
 	previous_days_url = 'http://finviz.com/quote.ashx?t='
 	database_array = {"type" : "mysql", "host" : "localhost", "username" : "shtf", "password" : "6Z8zDa^AB6EBJNZ#Vt^&", "port" : "3306", "database" : "shtf", "table" : "shtf_data"}
 	# Insert mode is used to set if data is entered into database as each item is parsed, or after the final array is built.
@@ -759,7 +766,7 @@ if __name__ == '__main__':
 	# If the argument is "daily" then do activities for daily stock collection
 	if command_arg[0] == "daily":
 		# Print initialization message to stdout and log
-		print 'SHTF Daily Stock Screener Starting... \nScrapign data for ' + datetime.datetime.today().strftime('%Y-%m-%d')
+		print 'SHTF Daily Stock Screener Starting... \nScraping data for ' + datetime.datetime.today().strftime('%Y-%m-%d')
 		logger.info('SHTF Daily Stock Screener Started.' + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		# Collect SHTF data for today
