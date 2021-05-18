@@ -125,7 +125,7 @@ FLUSH PRIVILEGES;
 
 -- Create and set password for shtf@localhost
 DROP USER IF EXISTS `shtf`@`localhost`;
-CREATE USER OR REPLACE `shtf`@`localhost` IDENTIFIED BY '6Z8zDa^AB6EBJNZ#Vt^&';
+CREATE USER `shtf`@`localhost` IDENTIFIED BY '6Z8zDa^AB6EBJNZ#Vt^&';
 
 -- Grant privileges to all corresponding databases
 GRANT SELECT, INSERT, UPDATE ON `shtf`.* TO `shtf`@`localhost`;

@@ -1,5 +1,0 @@
-2018-12-31 18:49:49,232 ERROR Failed to download page from website: HTTP Error 403: Forbidden: Access is denied.<class 'urllib2.HTTPError'>shtf.py239
-2018-12-31 18:49:49,233 ERROR SHTF Stock Screener failed to grab from website: http://www.finviz.com
-2018-12-31 18:49:49,264 ERROR Failed collect data from database: (1045, "Access denied for user 'shtf'@'localhost' (using password: YES)")<class '_mysql_exceptions.OperationalError'>shtf.py83
-2018-12-31 19:07:23,268 ERROR Page download from url successful: https://www.finviz.com
-2018-12-31 19:07:33,693 ERROR Failed to enter fundamental data to database: (1045, "Access denied for user 'shtf'@'localhost' (using password: YES)")<class '_mysql_exceptions.OperationalError'>shtf.py559
