@@ -1,0 +1,29 @@
+2021-05-18 12:28:24,625 ERROR The website returned a error code.
+2021-05-18 12:28:24,626 ERROR SHTF Stock Screener failed to grab from website: https://www.finviz.com
+2021-05-18 12:37:17,310 ERROR The website returned a error code.
+2021-05-18 12:37:17,310 ERROR SHTF Stock Screener failed to grab from website: https://www.finviz.com
+2021-05-18 22:51:30,966 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 22:51:31,009 ERROR Failed to download page from website: name 'data' is not defined<class 'NameError'>shtf.py290
+2021-05-18 22:51:31,009 ERROR SHTF Stock Screener failed to grab from website: https://www.finviz.com
+2021-05-18 22:51:54,316 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 22:51:54,509 ERROR Failed to collect fundamental data from website: can only concatenate str (not "bytes") to str<class 'TypeError'>shtf.py410
+2021-05-18 22:55:41,350 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 22:55:41,547 ERROR Failed to collect fundamental data from website: can only concatenate str (not "bytes") to str<class 'TypeError'>shtf.py392
+2021-05-18 22:57:40,960 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 22:57:41,356 ERROR Failed to collect fundamental data from website: local variable 'r' referenced before assignment<class 'UnboundLocalError'>shtf.py411
+2021-05-18 22:58:13,813 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 22:58:14,257 ERROR Failed to collect fundamental data from website: local variable 'r' referenced before assignment<class 'UnboundLocalError'>shtf.py411
+2021-05-18 23:01:15,086 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:04:20,979 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:04:21,327 ERROR Failed to collect fundamental data from website: 'HTTPResponse' object has no attribute 'status_code'<class 'AttributeError'>shtf.py425
+2021-05-18 23:05:31,401 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:05:31,734 ERROR Failed to collect fundamental data from website: 'HTTPResponse' object has no attribute 'get_code'<class 'AttributeError'>shtf.py425
+2021-05-18 23:05:54,363 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:05:54,700 ERROR Failed to collect fundamental data from website: module 'urllib' has no attribute 'urlopen'<class 'AttributeError'>shtf.py427
+2021-05-18 23:07:51,155 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:07:51,661 ERROR Failed to collect fundamental data from website: a bytes-like object is required, not 'str'<class 'TypeError'>shtf.py448
+2021-05-18 23:08:32,068 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:08:32,777 ERROR Failed to collect fundamental data from website: a bytes-like object is required, not 'str'<class 'TypeError'>shtf.py479
+2021-05-18 23:10:06,269 ERROR Page download from url successful: https://www.finviz.com
+2021-05-18 23:10:18,349 ERROR Failed to enter fundamental data to database: (1366, "Incorrect decimal value: '-' for column 'volatility_high_%' at row 1")<class 'MySQLdb._exceptions.OperationalError'>shtf.py692
+2021-05-18 23:17:30,817 ERROR Page download from url successful: https://www.finviz.com

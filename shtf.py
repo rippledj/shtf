@@ -13,16 +13,17 @@
 import logging
 import datetime
 import csv
-import urllib
-import requests
+#import urllib
+import urllib.request
 from bs4 import BeautifulSoup
-import urllib2
 import MySQLdb
 import time
 import decimal
 import sys
 import os
 import string
+import traceback
+import ssl
 
 # Function to strip strings
 #
@@ -47,7 +48,7 @@ def process_previous_days_new_close(url, database_array, insert_mode):
 	logger = logging.getLogger("SHTF_stock_screener")
 
 	# Print message to stdout and log
-	print "Collecting previous day data from database..."
+	print("Collecting previous day data from database...")
 	logger.info("Collecting previous day data from database: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 	# Collect previous day stocks that need data and put into list of primary key id and ticker
 	previous_day_array = collect_previous_day_tickers(database_array)
@@ -55,7 +56,7 @@ def process_previous_days_new_close(url, database_array, insert_mode):
 	# If no errors or no data to update
 	if previous_day_array:
 		# Print message to stdout and log
-		print "Collecting price data for previous day stocks..."
+		print("Collecting price data for previous day stocks...")
 		logger.info("Collecting price data for previous day stocks: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 		# Send the list to have new price collected
 		previous_day_array = collect_fundamental_data(url, previous_day_array, database_array, "aftermath", insert_mode)
@@ -65,7 +66,7 @@ def process_previous_days_new_close(url, database_array, insert_mode):
 			# Check insert  mode to check if store should be called after array build or items already stored
 			if insert_mode == "array":
 				# Print message to stdout and log
-				print "Sending previous day price data to database for insertion..."
+				print("Sending previous day price data to database for insertion...")
 				logger.info("Sending previous day price data to database for insertion: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 				# Store new close prices into database()
 				store_previous_day_data(database_array, previous_day_array, insert_mode)
@@ -108,7 +109,7 @@ def collect_previous_day_tickers(database_array):
 		# If there are no records that need updating then print message and log
 		if len(previous_day_data) == 0:
 			# Print message to stdout and log
-			print "No previous day data found to require updating: " + datetime.datetime.today().strftime('%Y-%m-%d')
+			print("No previous day data found to require updating: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 			logger.info("No previous day data found to require updating: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 			return False
 
@@ -118,7 +119,7 @@ def collect_previous_day_tickers(database_array):
 			"price_day_8" : item[9], "price_day_9" : item[10], "price_day_10" : item[11] })
 
 		# Print message to stdout and log of database entry success
-		print "Previous day data collected from database: " + datetime.datetime.today().strftime('%Y-%m-%d')
+		print("Previous day data collected from database: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 		logger.info("Previous day data collected from database: " + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		return previous_day_data_array
@@ -129,7 +130,7 @@ def collect_previous_day_tickers(database_array):
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		# Print the error
-		print 'Failed collect data from database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+		print('Failed collect data from database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Log error with creating filepath
 		logger.error('Failed collect data from database: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
@@ -174,7 +175,7 @@ def store_previous_day_data(database_array, previous_day_array, insert_mode):
 					shtf_connection.execute(query_string)
 
 					# Print message to stdout and log of database entry success
-					print "Next day price data entered into database for stock: " + item['ticker']
+					print("Next day price data entered into database for stock: " + item['ticker'])
 					logger.info("Next day price data entered into database for stock: " + item['ticker'] + " at " + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		if insert_mode == "item":
@@ -206,7 +207,7 @@ def store_previous_day_data(database_array, previous_day_array, insert_mode):
 				shtf_connection.execute(query_string)
 
 				# Print message to stdout and log of database entry success
-				print "Next day price data entered into database for stock: " + item['ticker']
+				print("Next day price data entered into database for stock: " + item['ticker'])
 				logger.info("Next day price data entered into database for stock: " + item['ticker'] + " at " + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 
@@ -221,7 +222,7 @@ def store_previous_day_data(database_array, previous_day_array, insert_mode):
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		# Print the error
-		print 'Failed insert previous day new price data to database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+		print('Failed insert previous day new price data to database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Log error with creating filepath
 		logger.error('Failed insert previous day price data to database: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
@@ -233,29 +234,27 @@ def collect_today_most_volatile(url):
 	logger = logging.getLogger("SHTF_stock_screener")
 
 	# Print intialization message
-	print 'Grabbing from: ' + url + '...\n'
+	print('Grabbing from: ' + url + '...\n')
 
 	# Begin Scraping from the url provided
 	try:
-		#r = urllib2.urlopen(url)
-		r = requests.get(url)
 
-	# If scraping failed log error and return False
-	except urllib2.URLError as e:
-		# Collect the exception information
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-		# Print the error
-		print 'Failed to download page from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
-		# Log error with creating filepath
-		logger.error('Failed to download page from website: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
-		return False
 
-	# If the error code from the return is OK
-	try:
+		req = urllib.request.Request(
+		    url,
+		    data=None,
+		    headers={
+		        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+		    }
+		)
+		context = ssl.create_default_context()
+		context.check_hostname = True
+		context.verify_mode = ssl.CERT_NONE
+		r = urllib.request.urlopen(req, context=context)
 
 		#if r.code in (200, 401):
-		if r.status_code in (200, 401):
+		if r.getcode() in (200, 401):
+
 			# Log the successful page download
 			logger.error('Page download from url successful: ' + url)
 
@@ -263,11 +262,13 @@ def collect_today_most_volatile(url):
 			today_metric_array = []
 
 			# Get the table data from the page
-			#data = urllib.urlopen(url).read()
-			data = r.content
+			bytes = r.read()
+			html = bytes.decode("utf8")
+			r.close()
+
 			# Send to beautiful soup
-			soup = BeautifulSoup(data, "html.parser")
-			i=1
+			soup = BeautifulSoup(html, "html.parser")
+			i = 1
 			# Find the tables with class t-home-table
 			for table in soup("table", { "class" : "t-home-table"}):
 
@@ -276,39 +277,41 @@ def collect_today_most_volatile(url):
 					for tr in table.findAll('tr')[1:]:
 						col = tr.findAll('td')
 						# Collect the data from table
-						ticker = col[0].get_text().encode('ascii','ignore')
-						price = col[1].get_text().encode('ascii','ignore')
-						change = col[2].get_text().encode('ascii','ignore')
-						volume = col[3].get_text().encode('ascii','ignore')
-						metric = col[5].get_text().encode('ascii','ignore')
-						record = {"ticker" : ticker, "price" : price, "change" : change, "volume" : volume, "metric" : metric}
-						# Output to screen
-						#print record
+						record = {
+							"ticker" : col[0].get_text(),
+							"price" : col[1].get_text(),
+							"change" : col[2].get_text(),
+							"volume" : col[3].get_text(),
+							"metric" : col[5].get_text()
+						}
 						# Append the array to the list of metric
 						today_metric_array.append(record)
 
 				# Third and fourth tables
-				if i==3 or i==4:
+				if i == 3 or i == 4:
 					for tr in table.findAll('tr')[1:]:
 						col = tr.findAll('td')
-						ticker1 = col[0].get_text().encode('ascii','ignore')
-						ticker2 = col[1].get_text().encode('ascii','ignore')
-						ticker3 = col[2].get_text().encode('ascii','ignore')
-						ticker4 = col[3].get_text().encode('ascii','ignore')
-						metric = col[5].get_text().encode('ascii','ignore')
-						record = {"date" : datetime.datetime.today().strftime('%Y-%m-%d'), "ticker1" : ticker1, "ticker2" : ticker2, "ticker3" : ticker3, "ticker4" : ticker4, "metric" : metric}
+						record = {
+							"date" : datetime.datetime.today().strftime('%Y-%m-%d'),
+							"ticker1" : col[0].get_text(),
+							"ticker2" : col[1].get_text(),
+							"ticker3" : col[2].get_text(),
+							"ticker4" : col[3].get_text(),
+							"metric" : col[5].get_text()
+						}
 						# Output to stdout
 						#print record
 						# Append the array to the list of metric
 						today_metric_array.append(record)
 
 				# Increment the table number
-				i+=1
+				i += 1
 
 		# If the page does not send an acceptable return code
 		else:
 			# Print to stdout that file returned an error code
-			print "The website returned an error code."
+			print("The website returned an error code.")
+			print(str(r.status_code))
 			# Log error with return code
 			logger.error('The website returned a error code.')
 			return False
@@ -322,11 +325,13 @@ def collect_today_most_volatile(url):
 
 	# If scraping failed log error and return False
 	except Exception as e:
+			# Close the connection
+			r.close()
 			# Collect the exception information
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 			# Print the error
-			print 'Failed to download page from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+			print('Failed to download page from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 			# Log error with creating filepath
 			logger.error('Failed to download page from website: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 			return False
@@ -372,7 +377,7 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 	logger = logging.getLogger("SHTF_stock_screener")
 
 	# Print intialization message
-	print 'Starting to collect fundamental data... '
+	print('Starting to collect fundamental data... ')
 
 	try:
 
@@ -383,40 +388,64 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 		for item in today_metric_array:
 
 			# Define url used in calls to fundamental data page
-			url = finviz_fundamental_url + item["ticker"]
-			print 'Grabbing fundamental data from: ' + url
+			url = finviz_fundamental_url + str(item["ticker"])
+			print('Grabbing fundamental data from: ' + url)
 
 			# Download the page with fundamental data
 			try:
-				#r = urllib2.urlopen(url)
-				r = requests.get(url)
-			except urllib2.URLError as e:
-				r = e
+				req = urllib.request.Request(
+				    url,
+				    data=None,
+				    headers={
+				        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+				    }
+				)
+				context = ssl.create_default_context()
+				context.check_hostname = True
+				context.verify_mode = ssl.CERT_NONE
+				r = urllib.request.urlopen(req, context=context)
+
+			except Exception as e:
+				# Close the connection
+				r.close()
+				# Collect the exception information
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				# Print the error
+				print('Failed to download page from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
+				# Log error with creating filepath
+				logger.error('Failed to download page from website: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
+				# Print traceback
+				traceback.print_exc()
+				return False
 
 			# Check the return code of the page to check OK
-			#if r.code in (200, 401):
-			if r.status_code in (200, 401):
+			if r.getcode() in (200, 401):
+
 				# Get the table data from the page
-   				data = urllib.urlopen(url).read()
+				bytes = r.read()
+				html = bytes.decode("utf8")
+				r.close()
+
 				# Pass to BeautifulSoup html parser
-   				soup = BeautifulSoup(data, "html.parser")
+				soup = BeautifulSoup(html, "html.parser")
 				# Set an increment variable for looping through tables
-   				i=1
+				i = 1
 				# Get the correct table into a variable
-   				table = soup.find("table", { "class" : "fullview-title"})
+				table = soup.find("table", { "class" : "fullview-title"})
 
 				# Loop through the table items
-   				for tr in table.findAll('tr')[1:]:
-   						if i==1:
-   							col = tr.findAll('td')
-   							companyname = col[0].get_text().encode('ascii','ignore')
-						if i==2:
-   							col = tr.findAll('td')
-   							industry = col[0].get_text().encode('ascii','ignore')
-   						i +=1
-	   			companyname = companyname.replace (',','')
-	   			industry = industry.replace(',','')
-	   			industrylist = industry.split('|')
+				for tr in table.findAll('tr')[1:]:
+					if i == 1:
+						col = tr.findAll('td')
+						companyname = col[0].get_text()
+					if i == 2:
+						col = tr.findAll('td')
+						industry = col[0].get_text()
+					i += 1
+				companyname = companyname.replace (',','')
+				industry = industry.replace(',','')
+				industrylist = industry.split('|')
 				industrylist = strip_list(industrylist)
 				record = {"ticker": item["ticker"], "date" : datetime.datetime.today().strftime('%Y-%m-%d'), "signal" : item["metric"], 'CompanyName' : companyname, 'Industry' : industrylist[0], 'SubIndustry' : industrylist[1], 'Country' : industrylist[2]}
 				# Append the item to array of fundamental data
@@ -425,22 +454,29 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 
 				# For each row of fundamental data create a dict and update item
 				for table in soup("table", { "class" : "snapshot-table2"}):
-   					#Large Financial Data Table
-   					for tr in table.findAll('tr')[0:]:
+					#Large Financial Data Table
+					for tr in table.findAll('tr')[0:]:
 						col = tr.findAll('td')
-						metric1 = col[0].get_text().encode('ascii','ignore')
-						data1 = col[1].get_text().encode('ascii','ignore')
-						metric2 = col[2].get_text().encode('ascii','ignore')
-						data2 = col[3].get_text().encode('ascii','ignore')
-						metric3 = col[4].get_text().encode('ascii','ignore')
-						data3 = col[5].get_text().encode('ascii','ignore')
-						metric4 = col[6].get_text().encode('ascii','ignore')
-						data4 = col[7].get_text().encode('ascii','ignore')
-						metric5 = col[8].get_text().encode('ascii','ignore')
-						data5 = col[9].get_text().encode('ascii','ignore')
-						metric6 = col[10].get_text().encode('ascii','ignore')
-						data6 = col[11].get_text().encode('ascii','ignore')
-						record = {metric1 : data1, metric2 : data2, metric3 : data3, metric4 : data4, metric5 : data5, metric6 : data6}
+						metric1 = col[0].get_text()
+						data1 = col[1].get_text()
+						metric2 = col[2].get_text()
+						data2 = col[3].get_text()
+						metric3 = col[4].get_text()
+						data3 = col[5].get_text()
+						metric4 = col[6].get_text()
+						data4 = col[7].get_text()
+						metric5 = col[8].get_text()
+						data5 = col[9].get_text()
+						metric6 = col[10].get_text()
+						data6 = col[11].get_text()
+						record = {
+							metric1 : data1,
+							metric2 : data2,
+							metric3 : data3,
+							metric4 : data4,
+							metric5 : data5,
+							metric6 : data6
+						}
 						# Append the item to array of fundamental data
 						item.update(record)
 
@@ -449,7 +485,7 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 
 				# Finally append the dict item to the fundamental_data_array
 				fundamentals_array.append(item)
-				print "Fundamental data collection complete for : " + item["CompanyName"]
+				print("Fundamental data collection complete for : " + item["CompanyName"])
 
 				# Check here to insert the item to database if flag set to by_item
 				if insert_mode == "item":
@@ -462,7 +498,7 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
    			#if the page does not return OK code, log error and print to stdout
 			else:
 				# Print to stdout that file returned an error code
-				print "The website returned an error code collecting fundamental data: " + finviz_fundamental_url
+				print("The website returned an error code collecting fundamental data: " + finviz_fundamental_url)
 				# Log error with return code
 				logger.error('The website returned an error code collecting fundamental data: ' + finviz_fundamental_url)
 				return False
@@ -476,7 +512,7 @@ def collect_fundamental_data(finviz_fundamental_url, today_metric_array, databas
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		# Print the error
-		print 'Failed to collect fundamental data from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+		print('Failed to collect fundamental data from website : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Log error with creating filepath
 		logger.error('Failed to collect fundamental data from website: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
@@ -509,7 +545,7 @@ def sanitize_fundamentals_record(record):
 			value = value.replace("B", "")
 			value = decimal.Decimal(value) * 1000000000
 			value = str(value).split(".")[0]
-	 	if key in descriptive_numerical_key_array and value.endswith("K"):
+		if key in descriptive_numerical_key_array and value.endswith("K"):
 			value = value.replace("K", "")
 			value = decimal.Decimal(value) * 1000
 			value = str(value).split(".")[0]
@@ -527,6 +563,7 @@ def sanitize_fundamentals_record(record):
 			# Go through list and remove unwanted characters
 			for i,item in enumerate(volatility_list):
 				volatility_list[i] = item.strip().replace("%", "")
+				if "." not in volatility_list[i]: volatility_list[i] = None
 			sanitized_record.update({ "volatility_low" : volatility_list[0], "volatility_high" : volatility_list[1] })
 		elif key == "52W Range":
 			_52_W_range_list = record["52W Range"].split("-")
@@ -604,7 +641,7 @@ def store_metrics_data(database_array, fundamentals_array, insert_mode):
 				shtf_connection.execute(query_string, values_array)
 
 				# Print message to stdout and log of database entry success
-				print "Fundamentals entered into database for stock: " + item['ticker']
+				print("Fundamentals entered into database for stock: " + item['ticker'])
 				logger.info("Fundamentals entered into database for stock: " + item['ticker'] + " at " + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 
@@ -654,7 +691,7 @@ def store_metrics_data(database_array, fundamentals_array, insert_mode):
 			shtf_connection.execute(query_string, values_array)
 
 			# Print message to stdout and log of database entry success
-			print "Fundamentals entered into database for stock: " + item['ticker']
+			print("Fundamentals entered into database for stock: " + item['ticker'])
 			logger.info("Fundamentals entered into database for stock: " + item['ticker'] + " at " + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		# Close the database conection
@@ -668,7 +705,7 @@ def store_metrics_data(database_array, fundamentals_array, insert_mode):
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		# Print the error
-		print 'Failed to enter fundamental data to database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+		print('Failed to enter fundamental data to database : ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Log error with creating filepath
 		logger.error('Failed to enter fundamental data to database: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
@@ -702,7 +739,7 @@ def build_command_arguments(argument_array, allowed_args_array):
 
 		# The final array should always be list of length 1
 		if len(command_arg) != 1:
-			print "Only one command line argument is allowed."
+			print("Only one command line argument is allowed.")
 			return False
 		# Return the modified array of length is proper
 		else:
@@ -713,7 +750,7 @@ def build_command_arguments(argument_array, allowed_args_array):
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		# Print the error
-		print 'Failed to build command arguments: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno)
+		print('Failed to build command arguments: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Log error with creating filepath
 		logger.error('Failed to build command arguments: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
@@ -738,15 +775,30 @@ if __name__ == '__main__':
 	finviz_url = "https://www.finviz.com"
 	finviz_fundamental_url = "https://finviz.com/quote.ashx?t="
 	previous_days_url = 'http://finviz.com/quote.ashx?t='
-	database_array = {"type" : "mysql", "host" : "localhost", "username" : "shtf", "password" : "6Z8zDa^AB6EBJNZ#Vt^&", "port" : "3306", "database" : "shtf", "table" : "shtf_data"}
+	database_array = {
+		"type" : "mysql",
+		"host" : "localhost",
+		"username" : "shtf",
+		"password" : "6Z8zDa^AB6EBJNZ#Vt^&",
+		"port" : "3306",
+		"database" : "shtf",
+		"table" : "shtf_data"
+	}
 	# Insert mode is used to set if data is entered into database as each item is parsed, or after the final array is built.
 	insert_mode = "item" # values are "item" or "array"
 	email_report_to_address = "administrator@company.com"
 	email_report = True
 	report_to_file = True
 	email_server_array = ["smtp.zoho.com", "587", "username", "password", "no-reply@company.com"]
-	allowed_args_array = ["-daily", "-daily-close", "-daily-open", "-report", "-intra", "-h", "-help"]
-
+	allowed_args_array = [
+		"-daily",
+		"-daily-close",
+		"-daily-open",
+		"-report",
+		"-intra",
+		"-h",
+		"-help"
+	]
 	## Run function to setup logger
 	setup_logger(log_file)
 	## Include logger in the main function
@@ -758,15 +810,15 @@ if __name__ == '__main__':
 	## Check return from command line arg bulder and if no command line args
 	## print error message and menu
 	if command_arg == False or command_arg[0] == "h" or command_arg[0] == "help":
-		print "command argument error...."
+		print("command argument error....")
 		## Print out full argument help menu
-		print build_argument_output()
+		print(build_argument_output())
 
 	#print command_arg
 	# If the argument is "daily" then do activities for daily stock collection
 	if command_arg[0] == "daily":
 		# Print initialization message to stdout and log
-		print 'SHTF Daily Stock Screener Starting... \nScraping data for ' + datetime.datetime.today().strftime('%Y-%m-%d')
+		print('SHTF Daily Stock Screener Starting... \nScraping data for ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 		logger.info('SHTF Daily Stock Screener Started.' + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		# Collect SHTF data for today
@@ -776,40 +828,36 @@ if __name__ == '__main__':
 		# If collect today most volatile successful
 		if today_metric_array:
 			# Print stdout success messgage
-			print 'SHTF Stock Screener has collected metrics array for today : ' + datetime.datetime.today().strftime('%Y-%m-%d')
+			print('SHTF Stock Screener has collected metrics array for today : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 			logger.info('SHTF Stock Screener has collected metrics array for today : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
-			print 'SHTF Stock Screener starting to collect fundamental data...'
+			print('SHTF Stock Screener starting to collect fundamental data...')
 			# Collect fundamental data for today's most volatile
 			fundamentals_array = collect_fundamental_data(finviz_fundamental_url, today_metric_array, database_array, "shtf", insert_mode)
 
 			if fundamentals_array:
 				if insert_mode == "array":
 					# Print stdout success messgage
-					print 'SHTF Stock Screener has collected fundamental data for all companies : ' + datetime.datetime.today().strftime('%Y-%m-%d')
+					print('SHTF Stock Screener has collected fundamental data for all companies : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 					logger.info('SHTF Stock Screener has collected fundamental data for all companies : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
-					print 'SHTF Stock Screener starting to enter data into databas...'
+					print('SHTF Stock Screener starting to enter data into databas...')
 					# Store the fundamental data for todays metrics in database
 					store_metrics_success = store_metrics_data(database_array, fundamentals_array, "array")
 					if store_metrics_success:
 						# Print stdout success messgage
-						print 'SHTF Stock Screener has entered all fundamental data for all companies into database : ' + datetime.datetime.today().strftime('%Y-%m-%d')
+						print('SHTF Stock Screener has entered all fundamental data for all companies into database : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 						logger.info('SHTF Stock Screener has entered all fundamental data for all companies into database : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 		# If collect today most volatile failed
 		else:
-			print 'SHTF Stock Screener failed to grab from website : ' + finviz_url
+			print('SHTF Stock Screener failed to grab from website : ' + finviz_url)
 			logger.error('SHTF Stock Screener failed to grab from website: ' + finviz_url)
-
 
 		# Collect data for stocks that were previously SHTF
 		# Process previous days most volitile stocks list
 		previous_day_success = process_previous_days_new_close(previous_days_url, database_array, insert_mode)
-		print 'SHTF Stock Screener has collected aftermath data for all stocks : ' + datetime.datetime.today().strftime('%Y-%m-%d')
+		print('SHTF Stock Screener has collected aftermath data for all stocks : ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 		logger.info('SHTF Stock Screener has collected aftermath data for all stocks: ' + datetime.datetime.today().strftime('%Y-%m-%d'))
 
 
-
-
-
 #log the finished message to the console
-print "SHTF Stock screener has completed..."
+print("SHTF Stock screener has completed...")
